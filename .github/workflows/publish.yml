@@ -1,54 +1,39 @@
-name: Publish
+name: Wails build
 
 on:
-  # 当master分支有push时，触发action
   push:
     tags:
-      - 'v*'  # 以 'v' 开头的标签触发工作流程
+    # Match any new tag
+      - '*'
+
+env:
+  # Necessary for most environments as build failure can occur due to OOM issues
+  NODE_OPTIONS: "--max-old-space-size=4096"
 
 jobs:
-  publish:
-    name: Publish Pypi and Create Release
-    if: github.repository == 'git-jiadong/workflows_test' # 仅在指定仓库的 tag 触发工作流程
-    # 此作业在 windows 上运行
-    runs-on: windows-latest
+  build:
+    strategy:
+    # Failure in one platform build won't impact the others
+      fail-fast: false
+      matrix:
+        build:
+          - name: 'myproject.exe'
+            platform:  'windows/amd64'
+            os: 'windows-latest'
 
+    runs-on: ${{ matrix.build.os }}
     steps:
-      - name: Checkout repository # 检出仓库
-        uses: actions/checkout@v2 # 使用 GitHub 官方的 checkout action
-
-      - name: Set git fetch depth # 设置 git fetch 深度
-        run: |
-          git fetch --prune --unshallow  # 获取完整的 git 历史记录
-
-      - name: Set up Golang # 设置 Golang 环境
-        uses: actions/setup-go@v5.0.2
+      - name: Checkout
+        uses: actions/checkout@v2
         with:
-          go-version: '1.21.0'
-      - run: |
-          go version
-          go install github.com/wailsapp/wails/v2/cmd/wails@latest
-          wails doctor
+          submodules: recursive
 
-      - name: Build App # 构建 Web UI
-        run: |
-          pwd
-          ls
-          wails build -debug
-      - uses: actions/create-release@v1
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+      - name: Build wails
+        uses: dAppServer/wails-build-action@v2.2
+        id: build
         with:
-          release_name: Version ${{ github.ref }}
-          tag_name: ${{ github.ref }}
-          draft: false
-          prerelease: false
-      - uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/bin/myproject.exe
-          asset_name: myproject.exe
-          asset_content_type: application/octet-stream
+          build-name: ${{ matrix.build.name }}
+          sign: false
+          build-platform: ${{ matrix.build.platform }}
+          package: true
+          go-version: '1.21'
