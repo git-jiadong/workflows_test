@@ -1,7 +1,6 @@
 # Wails directories
 build/bin
 frontend/wailsjs
-frontend/dist
 frontend/node_modules
 
 # Wails junk files
@@ -16,4 +15,4 @@ go.sum
 
 # System enviroment variables
 env
-*/.DS_Store
+*/.DS_Store 
