@@ -1,0 +1,37 @@
+name: Publish
+
+on:
+  # 当master分支有push时，触发action
+  push:
+    tags:
+      - 'v*'  # 以 'v' 开头的标签触发工作流程
+
+jobs:
+  publish:
+    name: Publish Pypi and Create Release
+    if: github.repository == 'git-jiadong/workflows_test' # 仅在指定仓库的 tag 触发工作流程
+    # 此作业在 windows 上运行
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository # 检出仓库
+        uses: actions/checkout@v2 # 使用 GitHub 官方的 checkout action
+
+      - name: Set git fetch depth # 设置 git fetch 深度
+        run: |
+          git fetch --prune --unshallow  # 获取完整的 git 历史记录
+
+      - name: Set up Golang # 设置 Golang 环境
+        uses: actions/setup-go@v5.0.2
+        with:
+          go-version: '1.21.0'
+      - run: |
+          go version
+          go install github.com/wailsapp/wails/v2/cmd/wails@latest
+          wails doctor
+
+      - name: Build App # 构建 Web UI
+        run: |
+          pwd
+          ls
+          wails build
