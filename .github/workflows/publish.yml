@@ -35,3 +35,20 @@ jobs:
           pwd
           ls
           wails build
+      - uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+        with:
+          release_name: Version ${{ github.ref }}
+          tag_name: ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/bin/myproject.exe
+          asset_name: myproject.exe
+          asset_content_type: application/octet-stream
